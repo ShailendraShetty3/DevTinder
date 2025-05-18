@@ -2,12 +2,9 @@ const express = require('express')
 
 const app = express();
 
-app.use("/test", (req, res)=>{
-    res.send("this is the message from the server")
-})
 
-app.use("/home", (req, res)=>{
-    res.send("this is the home ....")
+app.get("/user", (req, res)=>{
+    res.send({firstname:'Shailendra', lastname: 'Shetty'})
 })
 
 app.listen(3000, ()=>{
