@@ -23,6 +23,7 @@ app.get("/user", async (req, res)=>{
     
 })
 
+// delete user
 app.delete("/user", async(req, res)=>{
     try{
         // const user = await User.findByIdAndDelete({_id: req.body.id})
@@ -38,15 +39,48 @@ app.delete("/user", async(req, res)=>{
     
 })
 
-app.patch("/user", async(req, res)=>{
+// // update user
+// app.patch("/user", async(req, res)=>{
+//     try{
+//         const updateData = req.body
+//         const user = await User.findOneAndUpdate({_id : req.body.id}, updateData)
+//         res.send(user)
+//     } catch (err){
+//         res.status(400).send("something went wrong!")
+//     }
+    
+// })
+
+app.patch("/user/:id", async(req, res)=>{
     try{
         const updateData = req.body
-        const user = await User.findOneAndUpdate({_id : req.body.id}, updateData)
-        res.send(user)
-    } catch (err){
-        res.status(400).send("something went wrong!")
-    }
-    
+
+        //only these fields are allowed to update
+        const ALLOWED_UPDATES = [ "photoUrl", "about", "gender", "age", "skills"]
+        const isUpdateAllowed = Object.keys(updateData).every((k)=>
+            ALLOWED_UPDATES.includes(k)
+        )
+
+
+        if(!isUpdateAllowed){
+            throw new Error("update not allowed");
+        }
+
+        if(updateData?.skills.length>10){
+            throw new Error("skills cannot be more than 10")
+        }
+
+        const user = await User.findOneAndUpdate({_id : req.params?.id}, updateData, {
+            runValidators: true
+        })
+        if(!user){
+            res.status(404).send("data not found")
+        } else{
+            res.send(user)
+        }
+    } catch(err){
+        res.status(400).send("Update failed "+ err.message)
+    }  
 })
 
 app.get("/feed", async (req, res)=>{
