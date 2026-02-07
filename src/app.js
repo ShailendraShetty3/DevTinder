@@ -5,10 +5,15 @@ const User = require("./models/user")
 const { validateSignUpData } = require("./utils/validation")
 const bcrypt = require("bcrypt")
 const validator = require('validator')
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+
+const { userAuth } = require("./middlewares/auth");
 
 const app = express();
 
 app.use(express.json())
+app.use(cookieParser())
 
 app.get("/user", async (req, res) => {
     const userEmail = req.body.emailId
@@ -91,7 +96,7 @@ app.patch("/user/:id", async (req, res) => {
     }
 })
 
-app.get("/feed", async (req, res) => {
+app.get("/feed", userAuth, async (req, res) => {
     try {
         const users = await User.find({})
         res.send(users)
@@ -148,6 +153,17 @@ app.post("/login", async (req, res)=>{
 
         const isPasswordValid = await bcrypt.compare(password, user.password)
         if(isPasswordValid){
+
+            // create jwt token
+            const token = await jwt.sign({ _id: user._id }, "DEV@Tinder$790SecretKey", { expiresIn : "7d"});
+
+            //add the token to cookie and send the response back to the user
+
+            res.cookie("token", token, {
+                // expiring the complete cookie(optional)
+                expires: new Date(Date.now() + 8 * 3600000)
+            })
+
             res.status(201).send("user login succesful")
         }
         else{
@@ -157,6 +173,24 @@ app.post("/login", async (req, res)=>{
     } catch(err){
          res.status(400).send("error in the loggin " + err)
     }
+
+})
+
+app.get("/profile", userAuth,  async(req, res)=>{
+    try{
+    const user = req.user
+    res.send(user)
+    } catch (err){
+        res.status(400).send("Error "+ err.message);
+    }
+})
+
+app.post("/sendConnectionRequest", userAuth, async(req, res)=>{
+    // sending a connection request
+    const user = req.user
+    console.log(user.firstName + " is sending a connection request");
+
+    res.send(user.firstName + " is sending a connection request");
 
 })
 
